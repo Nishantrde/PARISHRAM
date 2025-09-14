@@ -3,6 +3,8 @@
   padding: 0;
   box-sizing: border-box;
 }
+{% load static %}
+
 #loading-screen {
   transition: opacity 2s ease, visibility 2s ease;
   z-index: 1050; /* higher than navbar or modals */
@@ -49,7 +51,7 @@ html, body {
   /* object-fit: fill; */
   /* align-self: center; */
   /* background: linear-gradient(to bottom right, #8437fff5, #1a7cfcef); */
-  background-image: url(bg.png);
+  background-image: url("../img/bg.png");
   margin: auto;
   padding-top: 70px;
 }
