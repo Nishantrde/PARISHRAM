@@ -1,0 +1,173 @@
+.navbar-light .navbar-nav .nav-link {
+    color: black;
+    font-weight: 500;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#up{
+    background-color: rgb(249 250 251);
+    padding: 50px;
+} 
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 10px;
+    max-width: 1300px;
+    margin: auto;
+    margin-top: 50px;
+}
+
+.search-section {
+    display: flex;
+    flex-direction: row;
+    padding: 0 20px;
+    border-right: 1px solid #eee;
+}
+
+.search-section:last-child {
+    border-right: none;
+}
+
+.label {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 2px;
+    padding-right: 7px;
+}
+
+.value {
+    font-weight: bold;
+    font-size: 14px;
+    color: #000;
+}
+
+.search-icon {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 18px;
+    color: #555;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    font-weight: bold;
+    font-size: 14px;
+    color: #000;
+}
+
+.search-button {
+    background-color: #0071c2;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    margin-left: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.search-button:hover {
+    background-color: #005ea8;
+}
+
+.remove-btn {
+    margin-left: auto;
+    font-size: 18px;
+    color: #aaa;
+    cursor: pointer;
+}
+#quorts{
+    margin: auto;
+    max-width: 1300px;
+    margin-top: 50px;
+}
+#quorts p {
+    font-size: 1.25rem;
+}
+#start , #stop{
+    border-width: 0cap;
+    font-size: 14px;
+    font-weight: bold;
+}
+.search-bar ::placeholder{
+    color: #000;
+}
+
+ .card-horizontal-scroll {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .hotel-card {
+      display: inline-block;
+      width: 300px;
+      margin-right: 16px;
+      vertical-align: top;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-img-top {
+      height: 215px;
+      object-fit: cover;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    .location-info {
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .rating {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #4caf50;
+    }
+    .stars {
+      color: #f7b500;
+    }
+    .container{
+        margin-top: 50px;
+    }
+
+@media (max-width: 1200px) {
+    .search-bar {
+        flex-direction: column;
+        align-items: stretch;
+        max-width: 800px;
+    }
+
+    .search-section {
+        flex-direction: row;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+        padding: 10px 15px;
+    }
+
+    .search-section:last-child {
+        border-bottom: none;
+    }
+
+    .search-icon {
+        justify-content: flex-start;
+        padding: 10px 15px;
+    }
+
+    .remove-btn {
+        align-self: flex-end;
+        margin: 5px 15px 10px 0;
+    }
+
+    .search-button {
+        margin: 15px;
+        width: calc(100% - 30px);
+    }
+}
