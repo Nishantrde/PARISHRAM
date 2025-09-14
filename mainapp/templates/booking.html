@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {% load static %}
+
+  <title>Booking - PARISHRAM</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    crossorigin="anonymous">
+
+  <!-- Remixicon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/booking.css' %}">
+
+  <!-- Leaflet CSS (no SRI to avoid blocking) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <style>
+    /* ensure full-height ancestors so 100% on #map works */
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    /* small helpers */
+    .search-bar .search-section { min-width: 140px; }
+    .search-bar .search-input { min-width: 180px; }
+
+    /* Fullscreen map modal */
+    #mapModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      z-index: 1080; /* above bootstrap nav */
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    #mapContainer {
+      position: relative;
+      margin: auto;
+      width: 100%;
+      height: 100vh;   /* important: give the map a real height */
+      max-width: 100%;
+      border-radius: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #map {
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1200;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .map-controls .btn, .map-controls .btn-like {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      background: white;
+    }
+
+    #map.leaflet-container {
+      cursor: crosshair;
+    }
+
+    .search-input[readonly] {
+      background-color: #fff;
+      cursor: pointer;
+    }
+
+    /* card scroll and layout */
+    .card-horizontal-scroll { gap: 12px; display: flex; overflow-x: auto; padding-bottom: 12px; }
+    .hotel-card.card { min-width: 260px; max-width: 260px; }
+
+    footer { background: #0d6efd; color: white; margin-top: 40px; }
+    footer a { color: #e9f2ff; text-decoration: none; }
+    .footer-links li { list-style: none; padding: 4px 0; }
+  </style>
+</head>
+
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="{% static 'img/logo.png' %}" alt="Parishram Logo" width="50" height="50" class="me-2">
+        <span class="fw-bold">PARISHRAM</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+        <!-- Left side nav items -->
+        <ul class="navbar-nav mx-auto d-flex justify-content-center gap-0">
+          <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.html" target="_blank"><i class="ri-home-4-line me-1"></i>Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="ri-calendar-line me-1"></i>Booking</a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="ri-map-pin-user-line me-1"></i>Tracking</a></li>
+          <li class="nav-item"><a class="nav-link" href="#"><i class="ri-team-line me-1"></i>Workers</a></li>
+        </ul>
+
+        <!-- Right side login -->
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="sign.html" target="_blank"><i class="ri-login-circle-line me-1"></i>Sign In / Sign Up</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO / SEARCH -->
+  <div id="up" style="padding-top:88px;">
+    <div id="quorts" class="px-3">
+      <h2>Ready to find a good and well skilled worker, my friend!</h2>
+      <p>Find them according to your work.</p>
+    </div>
+
+    <div class="search-bar d-flex gap-2 align-items-center p-3">
+      <!-- Destination (readonly — opens map modal) -->
+      <div class="search-section" style="flex: 1;">
+        <span class="label"><i class="ri-search-line"></i></span>
+        <input type="text" id="workLocationInput" class="search-input form-control" placeholder="work location" readonly
+          title="Click to pick location on map">
+        <!-- hidden lat/lon to store precise coordinates -->
+        <input type="hidden" id="workLat" name="workLat">
+        <input type="hidden" id="workLon" name="workLon">
+      </div>
+
+      <!-- Check in -->
+      <div class="search-section">
+        <span class="label">from</span>
+        <input type="datetime-local" id="start" name="start" class="form-control" placeholder="enter date and time ">
+      </div>
+
+      <!-- Check out -->
+      <div class="search-section">
+        <span class="label">upto</span>
+        <input type="datetime-local" id="stop" name="stop" class="form-control">
+      </div>
+
+      <!-- Work type (searchable via datalist) -->
+      <div class="search-section" style="width: 220px;">
+        <span class="label"><i class="ri-tools-fill"></i></span>
+
+        <!-- Searchable input using datalist (browser-native search suggestions) -->
+        <input list="workTypes" id="workTypeInput" class="form-control" placeholder="Work type (start typing)">
+        <datalist id="workTypes">
+          <option value="Plumber"></option>
+          <option value="Electrician"></option>
+          <option value="Carpenter"></option>
+          <option value="House Cleaner"></option>
+          <option value="Painter"></option>
+          <option value="Mason"></option>
+          <option value="Gardener"></option>
+          <option value="Driver"></option>
+          <option value="Technician"></option>
+          <option value="Appliance Repair"></option>
+          <option value="Moving / Packers"></option>
+          <option value="Babysitter"></option>
+          <option value="AC Repair"></option>
+          <option value="Locksmith"></option>
+          <option value="Plumbing Contractor"></option>
+          <option value="Electrical Contractor"></option>
+          <option value="Home Tutor"></option>
+          <option value="Pest Control"></option>
+          <option value="Cleaning Services"></option>
+          <option value="Carpentry & Furniture"></option>
+        </datalist>
+      </div>
+
+      <!-- Search Button and Reset link -->
+      <button class="search-button btn btn-primary">Search</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT - Workers -->
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold">Our best Workers</h5>
+      <a href="#" class="text-decoration-none">View all →</a>
+    </div>
+
+    <div class="card-horizontal-scroll pb-3">
+      <!-- Card 1: Plumber -->
+      <div class="hotel-card card bg-white" data-type="plumber">
+        <img src="https://source.unsplash.com/400x300/?plumber,india" class="card-img-top" alt="Plumber Image">
+        <div class="p-2">
+          <div class="fw-bold">Trisha Plumber</div>
+          <div class="location-info"><b>Plumber</b><br>Speciality: Leak repair & piping</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">Near Child Jail, Barmasia, Dhanbad</div>
+          <div class="rating">8.5 - Very good <small>(120)</small></div>
+          <div class="stars">★★★★☆</div>
+        </div>
+      </div>
+
+      <!-- Card 2: Electrician -->
+      <div class="hotel-card card bg-white" data-type="electrician">
+        <img src="https://source.unsplash.com/400x300/?electrician,india" class="card-img-top" alt="Electrician Image">
+        <div class="p-2">
+          <div class="fw-bold">Zigru Service Ent.</div>
+          <div class="location-info"><b>Electrician</b><br>Speciality: Wiring & panel work</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">Bank More Road, near Purana Bazar, Dhanbad</div>
+          <div class="rating">9.0 - Excellent <small>(340)</small></div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+
+      <!-- Card 3: Carpenter -->
+      <div class="hotel-card card bg-white" data-type="carpenter">
+        <img src="https://source.unsplash.com/400x300/?carpenter,woodwork,india" class="card-img-top" alt="Carpenter Image">
+        <div class="p-2">
+          <div class="fw-bold">Anuj Sharma</div>
+          <div class="location-info"><b>Carpenter</b><br>Speciality: Furniture making & repairs</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">Tetulmari Subhas Chowk, Dhanbad</div>
+          <div class="rating">8.2 - Very good <small>(180)</small></div>
+          <div class="stars">★★★★☆</div>
+        </div>
+      </div>
+
+      <!-- Card 4: Hardware / Carpentry -->
+      <div class="hotel-card card bg-white" data-type="hardware">
+        <img src="https://source.unsplash.com/400x300/?hardware,india" class="card-img-top" alt="Hardware Image">
+        <div class="p-2">
+          <div class="fw-bold">Balram Carpenter</div>
+          <div class="location-info"><b>Hardware / Carpentry</b><br>Speciality: Furniture & store works</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">01 Jharia Raja Talab, Dhanbad</div>
+          <div class="rating">7.9 - Good <small>(95)</small></div>
+          <div class="stars">★★★☆☆</div>
+        </div>
+      </div>
+
+      <!-- Card 5: Cleaner -->
+      <div class="hotel-card card bg-white" data-type="house cleaner">
+        <img src="https://source.unsplash.com/400x300/?cleaning,india" class="card-img-top" alt="Cleaner Image">
+        <div class="p-2">
+          <div class="fw-bold">Sarla Devi</div>
+          <div class="location-info"><b>House Cleaner</b><br>Speciality: Deep cleaning & chores</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">New Colony More, Saraidhela, Dhanbad</div>
+          <div class="rating">8.8 - Very good <small>(210)</small></div>
+          <div class="stars">★★★★☆</div>
+        </div>
+      </div>
+
+      <!-- Card 6: Plumber (another) -->
+      <div class="hotel-card card bg-white" data-type="plumber">
+        <img src="https://source.unsplash.com/400x300/?plumber,repair,india" class="card-img-top" alt="Another Plumber Image">
+        <div class="p-2">
+          <div class="fw-bold">Mahi Plumbing Works</div>
+          <div class="location-info"><b>Plumber</b><br>Speciality: Bathroom fittings & leak fixes</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">Saraidhela, Dhanbad</div>
+          <div class="rating">9.2 - Excellent <small>(147)</small></div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+
+      <!-- Card 7: Electrician 24-Hours -->
+      <div class="hotel-card card bg-white" data-type="electrician">
+        <img src="https://source.unsplash.com/400x300/?electrician,night,india" class="card-img-top" alt="24-Hour Electrician Image">
+        <div class="p-2">
+          <div class="fw-bold">24-Hr Electrician (Nirsa)</div>
+          <div class="location-info"><b>Electrician</b><br>Speciality: Emergency electrical repairs</div>
+          <hr class="my-2">
+          <div class="fw-semibold text-truncate">Bank More-Shastri Nagar, Dhanbad</div>
+          <div class="rating">8.5 - Very good <small>(230)</small></div>
+          <div class="stars">★★★★☆</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="bg-dark text-light pt-4">
+  <div class="container">
+    <div class="row">
+      <!-- About -->
+      <div class="col-md-4 mb-4">
+        <h5>About Us</h5>
+        <p>We help connect clients with skilled laborers efficiently and reliably. Your trusted labor management platform.</p>
+      </div>
+
+      <!-- Links -->
+      <div class="col-md-4 mb-4">
+        <h5>Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="#" class="text-light text-decoration-none">Home</a></li>
+          <li><a href="#" class="text-light text-decoration-none">Services</a></li>
+          <li><a href="#" class="text-light text-decoration-none">Contact</a></li>
+          <li><a href="#" class="text-light text-decoration-none">Terms of Service</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="col-md-4 mb-4">
+        <h5>Contact Us</h5>
+        <p><i class="bi bi-geo-alt-fill me-2"></i>Dhanbad, Jharkhand</p>
+        <p><i class="bi bi-telephone-fill me-2"></i>+91 7368940302</p>
+        <p><i class="bi bi-envelope-fill me-2"></i>parishram123@gmail.com</p>
+        <div>
+            <a href="#" class="text-light me-3"><i class="ri-facebook-fill"></i></a>
+            <a href="#" class="text-light me-3"><i class="ri-instagram-line"></i></a>
+            <a href="#" class="text-light me-3"><i class="ri-twitter-x-line"></i></a>
+          </div>
+      </div>
+    </div>
+
+      <div class="row mt-3">
+        <div class="col text-center">
+          <small>© <span id="year"></span> PARISHRAM — All rights reserved.</small>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Fullscreen Map Modal -->
+  <div id="mapModal" aria-hidden="true" role="dialog" aria-label="Map modal">
+    <div id="mapContainer">
+      <div class="map-controls">
+        <button id="mapCloseBtn" class="btn btn-sm btn-light">Close</button>
+        <button id="mapMyLocBtn" class="btn btn-sm btn-light">My location</button>
+        <div class="btn-like p-1">Click on map to place marker</div>
+      </div>
+      <div id="map" aria-hidden="false"></div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Bootstrap JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    // Set current year in footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Keep nav active script
+    (function () {
+      const currentPage = window.location.pathname.split("/").pop();
+      const navLinks = document.querySelectorAll(".navbar-nav .nav-link");
+      navLinks.forEach(link => {
+        const linkPage = link.getAttribute("href");
+        if (linkPage === currentPage || (currentPage === "" && linkPage === "index.html")) {
+          link.classList.add("active");
+        } else {
+          link.classList.remove("active");
+        }
+      });
+    })();
+
+    // ---- Map picker logic with improved address extraction ----
+    (function () {
+      const workInput = document.getElementById('workLocationInput');
+      const workLat = document.getElementById('workLat');
+      const workLon = document.getElementById('workLon');
+      const mapModal = document.getElementById('mapModal');
+      const mapCloseBtn = document.getElementById('mapCloseBtn');
+      const mapMyLocBtn = document.getElementById('mapMyLocBtn');
+      let mapInitialized = false;
+      let map, markerLayer, pickedMarker;
+
+      // Default center: Dhanbad, India
+      const defaultCenter = { lat: 23.7957, lon: 86.4304 };
+      const defaultZoom = 15;
+
+      function buildPreciseAddress(addr, display_name) {
+        if (!addr && !display_name) return null;
+
+        const line1Parts = [];
+        if (addr.house_number) line1Parts.push(addr.house_number);
+        if (addr.road) line1Parts.push(addr.road);
+        if (addr.pedestrian) line1Parts.push(addr.pedestrian);
+        if (addr.path) line1Parts.push(addr.path);
+
+        const line2Parts = [];
+        if (addr.neighbourhood) line2Parts.push(addr.neighbourhood);
+        if (addr.suburb) line2Parts.push(addr.suburb);
+        if (addr.village) line2Parts.push(addr.village);
+        if (addr.town) line2Parts.push(addr.town);
+        if (addr.city) line2Parts.push(addr.city);
+        if (addr.county) line2Parts.push(addr.county);
+
+        const line3Parts = [];
+        if (addr.state) line3Parts.push(addr.state);
+        if (addr.postcode) line3Parts.push(addr.postcode);
+        if (addr.country) line3Parts.push(addr.country);
+
+        const line1 = line1Parts.join(' ');
+        const line2 = line2Parts.join(', ');
+        const line3 = line3Parts.join(', ');
+
+        let parts = [];
+        if (line1) parts.push(line1);
+        if (line2) parts.push(line2);
+        if (line3) parts.push(line3);
+
+        let address = parts.join(', ');
+        if (!address && display_name) address = display_name;
+        return address || null;
+      }
+
+      async function reverseGeocode(lat, lon) {
+        try {
+          const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&addressdetails=1`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          if (!res.ok) throw new Error('Reverse geocode failed: ' + res.status);
+          const data = await res.json();
+          const addr = data.address || {};
+          const formatted = buildPreciseAddress(addr, data.display_name);
+          return { formatted: formatted, raw: data };
+        } catch (e) {
+          console.warn('Reverse geocode error:', e);
+          return { formatted: null, raw: null };
+        }
+      }
+
+      function openMapModal() {
+        mapModal.style.display = 'flex';
+        mapModal.setAttribute('aria-hidden', 'false');
+
+        setTimeout(() => {
+          if (!mapInitialized) {
+            initMap();
+            mapInitialized = true;
+          } else {
+            map.invalidateSize();
+          }
+        }, 180);
+      }
+
+      function closeMapModal() {
+        mapModal.style.display = 'none';
+        mapModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function setLocationToInput(lat, lon, formattedAddress) {
+        // Save lat/lon
+        workLat.value = lat;
+        workLon.value = lon;
+        // If we have a formatted address, show that; otherwise fallback to coords
+        if (formattedAddress) {
+          workInput.value = formattedAddress + ` (${lat.toFixed(5)}, ${lon.toFixed(5)})`;
+        } else {
+          workInput.value = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+        }
+      }
+
+      function initMap() {
+        map = L.map('map', { preferCanvas: true }).setView([defaultCenter.lat, defaultCenter.lon], defaultZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        markerLayer = L.layerGroup().addTo(map);
+
+        // click to place or move marker
+        map.on('click', async function (e) {
+          const { lat, lng } = e.latlng;
+          markerLayer.clearLayers();
+          pickedMarker = L.marker([lat, lng], { draggable: true }).addTo(markerLayer);
+
+          // drag -> update address & input
+          pickedMarker.on('dragend', async function (ev) {
+            const pos = ev.target.getLatLng();
+            const geores = await reverseGeocode(pos.lat, pos.lng);
+            setLocationToInput(pos.lat, pos.lng, geores.formatted);
+            closeMapModal();
+          });
+
+          // immediate reverse geocode for clicked point
+          const geores = await reverseGeocode(lat, lng);
+          setLocationToInput(lat, lng, geores.formatted);
+          closeMapModal();
+        });
+
+        // If the input already contains lat/lon, center there
+        if (workLat.value && workLon.value) {
+          const lat = parseFloat(workLat.value);
+          const lon = parseFloat(workLon.value);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            map.setView([lat, lon], 16);
+            L.marker([lat, lon]).addTo(markerLayer);
+          }
+        }
+
+        // small delay to force correct rendering
+        setTimeout(() => { if (map) map.invalidateSize(); }, 250);
+      }
+
+      // center map to user's geolocation
+      function goToMyLocation() {
+        if (!map) return;
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async pos => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            map.setView([lat, lon], 16);
+            markerLayer.clearLayers();
+            L.circle([lat, lon], { radius: 30 }).addTo(markerLayer);
+          }, err => {
+            map.setView([defaultCenter.lat, defaultCenter.lon], defaultZoom);
+          }, { enableHighAccuracy: true, timeout: 7000 });
+        } else {
+          map.setView([defaultCenter.lat, defaultCenter.lon], defaultZoom);
+        }
+      }
+
+      // Event bindings for map
+      workInput.addEventListener('click', (e) => openMapModal());
+      mapCloseBtn.addEventListener('click', (e) => closeMapModal());
+      mapMyLocBtn.addEventListener('click', (e) => goToMyLocation());
+
+      window.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && mapModal.style.display === 'flex') closeMapModal();
+      });
+
+      // clicking outside mapContainer closes modal
+      mapModal.addEventListener('click', (ev) => {
+        if (ev.target === mapModal) closeMapModal();
+      });
+
+      // prevent body scrolling when modal is open
+      const observer = new MutationObserver(() => {
+        if (mapModal.style.display === 'flex') {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      });
+      observer.observe(mapModal, { attributes: true, attributeFilter: ['style'] });
+
+    })();
+
+    // ---- Work type search/filter logic ----
+    (function () {
+      const searchButton = document.querySelector('.search-button');
+      const workTypeInput = document.getElementById('workTypeInput');
+      const resetBtn = document.getElementById('resetSearchBtn');
+      const cards = Array.from(document.querySelectorAll('.card-horizontal-scroll .hotel-card'));
+
+      function normalize(s) {
+        return (s || '').toString().trim().toLowerCase();
+      }
+
+      function applyFilter() {
+        const q = normalize(workTypeInput.value);
+        if (!q) {
+          // show all
+          cards.forEach(c => c.style.display = '');
+          return;
+        }
+
+        // show card if its data-type contains the query OR if visible text contains query
+        cards.forEach(card => {
+          const type = normalize(card.getAttribute('data-type'));
+          const text = normalize(card.textContent);
+          const matches = type.includes(q) || text.includes(q);
+          card.style.display = matches ? '' : 'none';
+        });
+      }
+
+      // Search on button click
+      searchButton.addEventListener('click', (e) => {
+        applyFilter();
+      });
+
+      // Search when user presses Enter in the workType input
+      workTypeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyFilter();
+        }
+        // allow Esc to clear the field and show all
+        if (e.key === 'Escape') {
+          workTypeInput.value = '';
+          applyFilter();
+        }
+      });
+
+      // Reset button
+      resetBtn.addEventListener('click', (e) => {
+        workTypeInput.value = '';
+        applyFilter();
+      });
+
+      // Optional: live filtering while typing (uncomment if you want)
+      // workTypeInput.addEventListener('input', () => applyFilter());
+
+    })();
+  </script>
+</body>
+
+</html>
