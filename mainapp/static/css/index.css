@@ -51,7 +51,7 @@ html, body {
   /* object-fit: fill; */
   /* align-self: center; */
   /* background: linear-gradient(to bottom right, #8437fff5, #1a7cfcef); */
-  background-image: url("../img/bg.png");
+  background-image: url({% static "img/bg.png" %});
   margin: auto;
   padding-top: 70px;
 }
