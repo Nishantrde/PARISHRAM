@@ -15,4 +15,8 @@ def labours(request, labr):
     
     return render(request, "labr_index.html", profile)
 
+def assin_work(request, labr):
+    print(labr)
+    return render(request, "assin_work.html")
+
 
