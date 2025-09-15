@@ -32,8 +32,14 @@
 
       <div class="mt-4 d-flex gap-2">
         <!-- Book button: underscores instead of spaces -->
-        <a href="/worker_{{ name|cut:' ' }}" class="btn btn-primary">Book</a>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary">← Back</a>
+        <a href="/assin_{{ name|cut:' ' }}" class="btn btn-primary">Book</a>
+        {% if on_work %}
+        <form method="post" action="/wrk_{{ name }}">
+            {% csrf_token %}
+        <button name="decision" value="Done" class="btn btn-primary">Done</button>
+        </form>
+        {% endif %}
+        <a href="/bookings" class="btn btn-outline-secondary">← Back</a>
       </div>
     </div>
   </div>

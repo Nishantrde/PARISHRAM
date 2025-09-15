@@ -1,0 +1,85 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Job Action — {{ name }}</title>
+
+  <!-- Bootstrap CSS (keeps same theme) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+
+  <!-- Remixicon (same icons set as your theme) -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <!-- Keep your site css if needed -->
+  <link rel="stylesheet" href="{% static 'css/booking.css' %}">
+
+  <style>
+    /* Minimal page keeping the original theme look */
+    html,body { height:100%; }
+    body { display:flex; flex-direction:column; }
+    main { flex:1 0 auto; padding-top:88px; } /* leave room for fixed navbar */
+    .action-card { max-width:420px; margin: 80px auto; }
+    /* Big, single-button look: keep two buttons but minimal UI */
+    .action-btn { width: 100%; padding: 14px 18px; font-size:1.05rem; }
+    .btn-space { margin-top:12px; }
+  </style>
+</head>
+<body>
+
+  <!-- Small navbar to keep theme (non-intrusive) -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="{% static 'img/logo.png' %}" alt="Parishram Logo" width="40" height="40" class="me-2">
+        <span class="fw-bold">PARISHRAM</span>
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Centered minimal card with ONLY the accept / reject actions -->
+     {% if on_work %}
+    <div class="action-card">
+      <div class="card shadow-sm text-center">
+        <div class="card-body p-4">
+          <!-- Hidden simple heading for accessibility (visual minimal) -->
+          <h5 class="visually-hidden">Job action for {{ name }}</h5>
+
+          <!-- Single form that posts decision to /wrk_<labr> -->
+          <form method="post" action="/wrk_{{ name }}">
+            {% csrf_token %}
+            <!-- include labr name as hidden if backend prefers it -->
+            <input type="hidden" name="labr" value="{{ name }}">
+
+            <!-- Accept button -->
+            <button type="submit" name="decision" value="accept" class="btn btn-primary action-btn">
+              Accept
+            </button>
+
+            <!-- Reject / Cancel button -->
+            <button type="submit" name="decision" value="reject" class="btn btn-outline-secondary action-btn btn-space">
+              Reject
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </main>
+
+  <!-- Small footer to preserve theme -->
+  <footer class="bg-dark text-light py-3 mt-auto">
+    <div class="container text-center small">
+      © <span id="year"></span> PARISHRAM
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

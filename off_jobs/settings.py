@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os 
+
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,8 +42,17 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django_google_sso',
     'django.contrib.staticfiles',
 ]
+
+GOOGLE_SSO_CLIENT_ID = os.environ.get('GOOGLE_SSO_CLIENT_ID')
+GOOGLE_SSO_PROJECT_ID = os.environ.get('GOOGLE_SSO_PROJECT_ID')
+GOOGLE_SSO_CLIENT_SECRET = os.environ.get('GOOGLE_SSO_CLIENT_SECRET')
+
+GOOGLE_SSO_ALLOWABLE_DOMAINS = ["gmail.com"]
+
+GOOGLE_SSO_NEXT_URL = 'mainapp:here'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -74,11 +88,17 @@ WSGI_APPLICATION = 'off_jobs.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# Postgress
+import dj_database_url
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default':dj_database_url.parse('postgresql://parishram_user:Y81Gk8ylhxTbnSrP26yoH6eUSZpNHZFu@dpg-d33vvg6r433s738tk8og-a.singapore-postgres.render.com/parishram')
 }
 
 
