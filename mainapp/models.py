@@ -7,5 +7,7 @@ class Workers(models.Model):
     charge_per_hr = models.IntegerField(default=0)
     ratings = models.FloatField(null=True, blank=True)
     location = models.CharField(max_length=1000, default="")
+    on_work = models.BooleanField(default = False)
+    work_done = models.BooleanField(default = True)
 
 
