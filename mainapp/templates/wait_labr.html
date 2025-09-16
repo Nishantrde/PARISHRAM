@@ -59,9 +59,11 @@
             </button>
 
             <!-- Reject / Cancel button -->
+             {% if accept is False %}
             <button type="submit" name="decision" value="reject" class="btn btn-outline-secondary action-btn btn-space">
               Reject
             </button>
+            {% endif %}
           </form>
         </div>
       </div>

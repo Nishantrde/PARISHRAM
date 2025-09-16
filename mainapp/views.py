@@ -1,8 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Workers
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
+
 
 # Create your views here.
 def index(request):
+    name = ""
+    if request.user.is_authenticated:
+        name = request.user.first_name if request.user.first_name is not None or "" else request.user.email
+        print(request.user.email, name)
     return render(request, "index.html")
 
 def bookings(request):
@@ -11,7 +18,7 @@ def bookings(request):
 def labours(request, labr):
     worker_profile = Workers.objects.get(name = labr)
     print(worker_profile.name)
-    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location, "on_work":worker_profile.on_work}
+    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location, "on_work":worker_profile.on_work, "accept":worker_profile.accept}
     
     return render(request, "labr_index.html", profile)
 
@@ -21,14 +28,14 @@ def assin_work(request, labr):
     worker_profile.on_work = True
     worker_profile.work_done = False
     worker_profile.save()
-    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location, "on_work":worker_profile.on_work}
+    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location, "on_work":worker_profile.on_work, "accept":worker_profile.accept}
 
     return render(request, "labr_index.html", profile)
 
 def wait_labr(request, labr):
     worker_profile = Workers.objects.get(name = labr)
     print(worker_profile.name, worker_profile.on_work)
-    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location}
+    profile = {"name":worker_profile.name, "occupation":worker_profile.occupation, "charge_per_hr":worker_profile.charge_per_hr, "ratings":worker_profile.ratings, "location":worker_profile.location, "on_work":worker_profile.on_work, "accept":worker_profile.accept}
     
     return render(request, "wait_labr.html", profile)
 
@@ -63,6 +70,7 @@ def wait_labr_tru_fla(request, labr):
 
     
     
-    return render(request, "wait_labr.html", profile)
+    # return render(request, "wait_labr.html", profile)
+    return redirect(f"/wrk_status_{labr}")
 
 
