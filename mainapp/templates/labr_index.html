@@ -38,13 +38,16 @@
         {% if on_work %}
         <form method="post" action="/wrk_{{ name }}">
           {% csrf_token %}
+          {% if accept is True %}
           <button name="decision" value="Done" class="btn btn-primary">Done</button>
+          {% endif %}
+
         </form>
       
         {% if accept is True %}
 
       <button name="decision" value="Done" class="btn btn-primary">Accepted</button>
-
+        
       {% endif %}
       {% endif %}
       <a href="/bookings" class="btn btn-outline-secondary">← Back</a>

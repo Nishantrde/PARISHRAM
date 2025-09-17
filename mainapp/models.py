@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 class Workers(models.Model):
@@ -15,4 +15,11 @@ class Workers(models.Model):
     def __str__(self):
         return self.name
 
+class User_profile(models.Model):
+    name = models.CharField(max_length=50, default="")
+    email = models.EmailField(null=True, blank=True)
+    history = ArrayField(models.CharField(max_length=50), default=list, blank=True)
+    def __str__(self):
+        return self.email
+    
 

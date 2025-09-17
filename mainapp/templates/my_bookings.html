@@ -1,0 +1,72 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Bookings</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+
+  <!-- Remixicon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <style>
+    html, body { height:100%; }
+    body { display:flex; flex-direction:column; }
+    main { flex:1 0 auto; padding-top:88px; }
+    .worker-card { max-width: 500px; margin: 20px auto; }
+    .card-body h5 { font-weight:600; }
+    .card-body .detail { margin: 2px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="{% static 'img/logo.png' %}" alt="Parishram Logo" width="40" height="40" class="me-2">
+        <span class="fw-bold">PARISHRAM</span>
+      </a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h3 class="text-center mb-4">My Bookings</h3>
+
+      {% if user_history %}
+        {% for wrk in user_history %}
+          <div class="card worker-card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="ri-user-3-fill me-2 text-primary"></i>{{ wrk.name }}
+              </h5>
+              <p class="detail"><i class="ri-briefcase-2-fill me-2"></i>{{ wrk.occupation }}</p>
+              <p class="detail"><i class="ri-money-rupee-circle-fill me-2"></i>{{ wrk.charge_per_hr }} / hr</p>
+              <p class="detail"><i class="ri-map-pin-2-fill me-2"></i>{{ wrk.location }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-center text-muted">No bookings found.</p>
+      {% endif %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-3 mt-auto">
+    <div class="container text-center small">
+      © <span id="year"></span> PARISHRAM
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
