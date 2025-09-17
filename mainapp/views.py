@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import Workers, User_profile
+from django.contrib.auth import logout
 
 
 # Create your views here.
@@ -26,6 +27,10 @@ def index(request):
             profile.save()
 
     return render(request, "index.html", {"usr_auth": usr_auth, "name": name, "email":user_email})
+
+def log_out(request):
+    logout(request)
+    return redirect("/")
 
 
 def my_bookings(request, usr):

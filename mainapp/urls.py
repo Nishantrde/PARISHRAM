@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import index, bookings, labours, wait_labr, assin_work, wait_labr_tru_fla, my_bookings
+from .views import index, bookings, log_out, labours, wait_labr, assin_work, wait_labr_tru_fla, my_bookings
 
 app_name = 'mainapp'
 
 urlpatterns = [
         path("", index, name="here"),
+        path("log_out", log_out),
         path("my_bookings_<str:usr>", my_bookings),
         path("bookings", bookings),
         path("worker_<str:labr>", labours, name="app_user"),
